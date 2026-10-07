@@ -11,3 +11,9 @@ Write-Host "Windows 打包软件启动成功：$($process.MainWindowTitle)"
 $process.CloseMainWindow() | Out-Null
 if (-not $process.WaitForExit(15000)) { $process.Kill(); throw "软件未能正常关闭" }
 if ($process.ExitCode -ne 0) { throw "软件关闭时异常：$($process.ExitCode)" }
+$checkFolder = Join-Path $env:RUNNER_TEMP ([Guid]::NewGuid().ToString())
+$check = Start-Process -FilePath $Executable -ArgumentList @('--verify-package', "`"$checkFolder`"") -PassThru -Wait
+if ($check.ExitCode -ne 0) { throw "打包软件图片处理校验失败：$($check.ExitCode)" }
+$report = Get-Content (Join-Path $checkFolder 'package-check.json') -Raw | ConvertFrom-Json
+if (-not $report.passed) { throw "打包软件图片处理校验失败：$($report.reason)" }
+Write-Host ($report.checks -join '；')

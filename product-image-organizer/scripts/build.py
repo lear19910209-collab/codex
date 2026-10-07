@@ -11,6 +11,8 @@ from organizer import APP_NAME, VERSION
 
 
 def main():
+    if sys.stdout is not None:
+        sys.stdout.reconfigure(encoding="utf-8")
     sources = ROOT / "build" / "open-source"
     if not (sources / "sources.json").exists():
         raise SystemExit("请先运行 python scripts/fetch_open_source.py，准备随包提供的开源源码和许可。")

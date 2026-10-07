@@ -9,6 +9,9 @@ from organizer.ui import MainWindow, create_application, info
 
 def main():
     app = create_application()
+    if len(sys.argv) == 3 and sys.argv[1] == "--verify-package":
+        from organizer.package_check import verify_package
+        return verify_package(Path(sys.argv[2]))
     assets = Path(getattr(sys, "_MEIPASS", Path(__file__).parent)) / "assets"
     app.setWindowIcon(QIcon(str(assets / "app.ico")))
     window = MainWindow()

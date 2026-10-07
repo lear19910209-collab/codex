@@ -5,6 +5,7 @@ by the developer/build service, never for processing user images.
 """
 import hashlib
 import json
+import sys
 import tarfile
 import urllib.request
 from pathlib import Path
@@ -19,6 +20,8 @@ SOURCES = {
 
 
 def main():
+    if sys.stdout is not None:
+        sys.stdout.reconfigure(encoding="utf-8")
     folder = ROOT / "build" / "open-source"
     licenses = ROOT / "build" / "licenses"
     folder.mkdir(parents=True, exist_ok=True)

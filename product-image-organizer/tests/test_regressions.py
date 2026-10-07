@@ -40,3 +40,10 @@ def test_cmyk_jpeg_conversion(tmp_path, product):
     assert result.success == 1
     with Image.open(result.output_dir + "/" + result.outputs[0]) as image:
         assert image.mode == "RGB"
+
+
+def test_package_codec_verification(tmp_path):
+    from organizer.package_check import verify_package
+    assert verify_package(tmp_path) == 0
+    report = json.loads((tmp_path / "package-check.json").read_text("utf-8"))
+    assert report["passed"] and len(report["checks"]) == 5
