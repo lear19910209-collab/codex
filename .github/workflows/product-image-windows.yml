@@ -1,0 +1,94 @@
+name: Windows 商品图批量整理器
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'product-image-organizer/**'
+      - '.github/workflows/product-image-windows.yml'
+  pull_request:
+    paths:
+      - 'product-image-organizer/**'
+      - '.github/workflows/product-image-windows.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: product-image-organizer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+          cache: pip
+          cache-dependency-path: |
+            product-image-organizer/requirements.txt
+            product-image-organizer/requirements-dev.txt
+      - name: 安装构建依赖
+        run: python -m pip install -r requirements-dev.txt
+      - name: 验证图片处理与中文界面
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q --junitxml=test-artifacts/test-results.xml
+      - name: 准备随包提供的开源源码与许可
+        run: python scripts/fetch_open_source.py
+      - name: 打包 Windows exe 和免安装版
+        run: python scripts/build.py
+      - name: 检查打包程序可以启动和退出
+        run: ./scripts/windows_smoke.ps1 -Executable './dist/商品图批量整理器/商品图批量整理器.exe'
+      - name: 生成简体中文安装包
+        run: |
+          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $compiler)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup 安装失败' }
+          }
+          $language = 'C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl'
+          if (-not (Test-Path $language)) {
+            Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/jrsoftware/issrc/6da05b995605fbda9c0806820c72153729265115/Files/Languages/ChineseSimplified.isl' -OutFile $language
+          }
+          & $compiler 'packaging/installer.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Windows 安装包生成失败' }
+      - name: 静默安装并验证已安装软件
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP 'ProductImageOrganizerInstalled'
+          $installer = Start-Process -FilePath './release/ProductImageOrganizer-1.0.0-Setup.exe' -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$destination`"") -PassThru -Wait
+          if ($installer.ExitCode -ne 0) { throw "安装失败：$($installer.ExitCode)" }
+          ./scripts/windows_smoke.ps1 -Executable (Join-Path $destination '商品图批量整理器.exe')
+          $uninstaller = Start-Process -FilePath (Join-Path $destination 'unins000.exe') -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru -Wait
+          if ($uninstaller.ExitCode -ne 0) { throw "卸载失败：$($uninstaller.ExitCode)" }
+      - name: 生成校验值
+        run: |
+          $lines = Get-ChildItem release -File | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)"
+          }
+          $lines | Set-Content -Encoding utf8 release/SHA256SUMS.txt
+          Copy-Item test-artifacts/test-results.xml release/test-results.xml
+      - name: 下载 Windows 安装包和免安装版
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-商品图批量整理器-1.0.0
+          path: product-image-organizer/release/*
+          if-no-files-found: error
+          retention-days: 90
+      - name: 保存测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-测试报告
+          path: product-image-organizer/test-artifacts/test-results.xml
+          if-no-files-found: ignore
