@@ -57,7 +57,11 @@ Python 3.12.14、PySide6 / Qt 6.8.3、Pillow 11.3.0。69 项自动测试通过�
 6. 静默安装，检查安装后的程序启动、退出与卸载。
 7. 只在全部成功后提供安装包、免安装包和 SHA-256 校验文件。
 
-具体本次构建结果以 GitHub Actions 页面为准，最终交付说明会列出已执行结果。本地 Linux exe 不能当作 Windows exe。没有把仅写好配置等同于 Windows 构建已经成功。
+**本次 Windows 构建已实际全部通过。** [构建记录](https://github.com/lear19910209-collab/codex/actions/runs/37602687463) / [安装包与免安装版下载](https://github.com/lear19910209-collab/codex/actions/runs/37602687463/artifacts/11473706374)。
+
+构建软件源码提交：`a8b86fa3be8f835b6368563faaf006aac0f2ebf6`。Windows Server 2022、Python 3.12.10，69 项测试通过，耗时 13.38 秒。便携程序和实际安装后的程序分别通过三种格式输出、重复检测、原图哈希与正常启动退出检查；中文安装包生成、静默安装和卸载均成功。完整工作流耗时 2 分 27 秒。
+
+下载产物包括 `ProductImageOrganizer-1.0.0-Setup.exe`、`ProductImageOrganizer-1.0.0-Portable.zip`、`SHA256SUMS.txt` 和 `test-results.xml`。下载文件约 236 MB（包含两个版本及对应开源源码），保留至 2027-01-05。后续可随时通过 Run workflow 重新生成。
 
 ## 已知限制
 

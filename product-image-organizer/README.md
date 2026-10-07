@@ -10,6 +10,8 @@
 
 下载 `ProductImageOrganizer-1.0.0-Setup.exe`，双击安装，再打开桌面快捷方式。无需安装 Python 或其他开发环境。
 
+[下载本次已验证的 Windows 安装包和免安装版](https://github.com/lear19910209-collab/codex/actions/runs/37602687463/artifacts/11473706374)（需登录 GitHub；下载 ZIP 后解压，里面有 Setup.exe）。
+
 1. 拖入图片或文件夹，也可以点击「添加图片」「添加文件夹」。
 2. 根据需要勾选右侧功能。默认仅启用平衡压缩，保持原始尺寸和格式。
 3. 可点击「检测重复图片」，确认哪些图片需要输出。
