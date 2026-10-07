@@ -4,10 +4,51 @@ from dataclasses import asdict
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import QMimeData, QPoint, QPointF, QUrl
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtTest import QTest
+import pytest
 
 from organizer.core import DuplicateGroup, Options, create_output_folder, inspect_image, process_batch
 from organizer.settings import Preferences, load_preferences, save_preferences
 from organizer.ui import DuplicatesDialog, MainWindow, ResultDialog, SettingsDialog, Worker
+
+
+@pytest.mark.parametrize("area", ["drop", "list"])
+def test_actual_file_drop_events(app, tmp_path, area):
+    from organizer.ui import DropZone, ImageList
+    widget = DropZone() if area == "drop" else ImageList()
+    widget.show()
+    app.processEvents()
+    assert widget.acceptDrops()
+    received = []
+    widget.files.connect(received.append)
+    mime = QMimeData()
+    path = tmp_path / "中文 空格.jpg"
+    mime.setUrls([QUrl.fromLocalFile(str(path))])
+    target = widget if area == "drop" else widget.viewport()
+    enter = QDragEnterEvent(QPoint(10, 10), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier)
+    app.sendEvent(target, enter)
+    assert enter.isAccepted()
+    drop = QDropEvent(QPointF(10, 10), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier)
+    app.sendEvent(target, drop)
+    assert drop.isAccepted() and received == [[path]]
+    widget.close()
+
+
+def test_thumbnail_close_click(app, tmp_path, product):
+    window = MainWindow(tmp_path / "settings.json")
+    path = tmp_path / "原图.png"
+    product.save(path)
+    before = path.read_bytes()
+    window.add_entry(inspect_image(path))
+    window.show()
+    app.processEvents()
+    rect = window.image_list.visualItemRect(window.image_list.item(0))
+    QTest.mouseClick(window.image_list.viewport(), Qt.LeftButton, Qt.NoModifier, QPoint(rect.right()-15, rect.top()+14))
+    assert len(window.entries) == window.image_list.count() == 0
+    assert path.read_bytes() == before
+    window.close()
 
 
 def pump(app, predicate, timeout=30):

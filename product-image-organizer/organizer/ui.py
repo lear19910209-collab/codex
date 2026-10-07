@@ -164,7 +164,8 @@ class ImageList(QListWidget):
         self.setSelectionMode(QListWidget.ExtendedSelection)
         self.setItemDelegate(ThumbnailDelegate(self))
         self.setAcceptDrops(True)
-        self.setDragDropMode(QListWidget.NoDragDrop)
+        self.setDragDropMode(QListWidget.DropOnly)
+        self.viewport().setAcceptDrops(True)
 
     def dragEnterEvent(self, event):
         DropZone.dragEnterEvent(self, event)
